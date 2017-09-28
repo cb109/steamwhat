@@ -137,6 +137,7 @@ def get_shared_games_report(steamids):
             "name": g.appid_to_name[appid],
             "appid": appid
         })
+    shared_games.sort(key=lambda game: game["name"])
 
     return jsonify(players=players, shared_games=shared_games)
 
@@ -187,4 +188,4 @@ def shared_games_report():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
