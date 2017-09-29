@@ -9,6 +9,7 @@ import requests
 from flask import Flask
 from flask import g
 from flask import jsonify
+from flask import render_template
 from flask import request as flask_request
 
 
@@ -17,12 +18,13 @@ def get_steam_api_key():
 
     The latter overwrites the first.
     """
+    key = None
     try:
         import keyring
         key = keyring.get_password("steamwhat", "api_key")
     except ImportError:
         pass
-    key = os.environ.get("STEAM_API_KEY", None)
+    key = os.environ.get("STEAM_API_KEY", key)
     if key is not None:
         return key
     raise RuntimeError("Must configure a Steam API Key")
@@ -130,6 +132,7 @@ def get_shared_games_report(steamids):
     for report in player_reports:
         report.pop("appids")
         players.append(report)
+    players.sort(key=lambda player: player["name"].lower())
 
     shared_games = []
     for appid in shared_appids:
@@ -137,7 +140,7 @@ def get_shared_games_report(steamids):
             "name": g.appid_to_name[appid],
             "appid": appid
         })
-    shared_games.sort(key=lambda game: game["name"])
+    shared_games.sort(key=lambda game: game["name"].lower())
 
     return jsonify(players=players, shared_games=shared_games)
 
@@ -145,7 +148,7 @@ def get_shared_games_report(steamids):
 app = Flask(__name__)
 
 
-@app.route('/')
+@app.route('/sharedgames')
 def shared_games_report():
     """Return which games are shared between the players.
 
@@ -185,6 +188,11 @@ def shared_games_report():
     except Exception as err:
         return "ERROR: " + str(err), 500
     return result
+
+
+@app.route('/')
+def client():
+    return render_template("client.html")
 
 
 if __name__ == "__main__":

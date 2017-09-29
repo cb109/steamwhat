@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>steamwhat</title>
+  </head>
+  <link href="https://fonts.googleapis.com/css?family=Encode+Sans+Condensed"
+        rel="stylesheet">
+  <body>
+    <div id="app">
+      <div class="container">
+        <div class="inputs">
+          <h3>Steam what?</h3>
+          <div class="legend">
+            You want to play a game on Steam with one or more of your
+            friends, but you don't know which?
+            <p />
+            Add Steam IDs (one per line) below and see which games you
+            all share.
+            <p />
+            <small>
+              <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=209000244">
+                But I don't know my Steam ID, where to find it?
+              </a>
+            </small>
+          </div>
+          <textarea id="steamids" rows="5"></textarea>
+          <button id="find-btn"
+                  onclick="api.onFindSharedGamesClicked()">
+            Find shared Games
+          </button>
+          <div id="warning" hidden>
+            Something went wrong, please check your input and try again
+          </div>
+        </div>
+        <div id="results"></div>
+      </div>
+    </div>
+    <script>
+      var api = (function() {
+        'use strict';
+
+        // From: https://stackoverflow.com/questions/247483
+        var HttpClient = function() {
+          this.get = function(url, successCallback, failureCallback) {
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function() {
+              if (request.readyState == 4) {
+                if (request.status == 200) {
+                  successCallback(request.responseText);
+                } else {
+                  failureCallback(request.responseText);
+                }
+              }
+            }
+            request.open('GET', url, true);
+            request.send(null);
+          }
+        }
+
+        function getSteamIds() {
+          var area = document.querySelector('textarea#steamids');
+          var text = area.value;
+          var tokens = text.split('\n');
+          tokens = tokens.map(function(token) {
+            return token.trim();
+          });
+          tokens = tokens.filter(function(token) {
+            return token !== '';
+          });
+          return tokens;
+        }
+
+        // function loadSteamIds() {
+        //   var steamIds = localStorage.getItem('steamIds');
+        //   if (!steamIds) {
+        //     return null;
+        //   }
+        //   var steamIds = JSON.parse(steamIds);
+        // }
+
+        // function storeSteamIds(steamIds) {
+        //   var value = JSON.stringify(steamIds);
+        //   localStorage.setItem('steamIds', steamIds);
+        // }
+
+        function showWarning() {
+          var el = document.querySelector('#warning');
+          el.hidden = false;
+          setTimeout(function() {
+            el.hidden = true;
+          }, 3000)
+        }
+
+        function getResultsElement() {
+          var el = document.querySelector('#results');
+          return el;
+        }
+
+        function flushResults() {
+          var el = getResultsElement();
+          el.innerHTML = '';
+        }
+
+        function reportResults(response) {
+          console.log("response", response);
+          var data = JSON.parse(response);
+          var results = getResultsElement();
+
+          // Players
+          var h4 = document.createElement('h4');
+          h4.innerHTML = 'Players';
+          var ul = document.createElement('ul');
+          for (var i = 0; i < data.players.length; i++) {
+            var player = data.players[i];
+            var li = document.createElement('li');
+            li.innerHTML = player.name + ' - ' + player.steamid;
+            ul.appendChild(li);
+          }
+          results.appendChild(h4);
+          results.appendChild(ul);
+
+          // Shared Games
+          var h4 = document.createElement('h4');
+          h4.innerHTML = 'Shared Games';
+          var ul = document.createElement('ul');
+          for (var i = 0; i < data.shared_games.length; i++) {
+            var game = data.shared_games[i];
+            var li = document.createElement('li');
+            li.innerHTML = game.name;
+            ul.appendChild(li);
+          }
+          results.appendChild(h4);
+          results.appendChild(ul);
+        }
+
+        function onFindSharedGamesClicked() {
+          var steamIds = getSteamIds();
+          if (!steamIds.length) {
+            alert('You must enter at least one Steam ID');
+            return;
+          }
+
+          steamIds = steamIds.join(',');
+          var query = '?steamids=' + encodeURI(steamIds);
+          var url = '/sharedgames' + query;
+
+          var button = document.querySelector('#find-btn');
+          button.disabled = true;
+
+          var client = new HttpClient();
+          flushResults();
+          client.get(url,
+            function(response) {
+              button.disabled = false;
+              reportResults(response);
+            },
+            function(error) {
+              console.error(error);
+              button.disabled = false;
+              showWarning();
+              flushResults();
+            });
+        }
+
+        return {
+          onFindSharedGamesClicked: onFindSharedGamesClicked,
+        };
+      })();
+    </script>
+    <style>
+      * {
+        font-family: 'Encode Sans Condensed', sans-serif;
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      #app {
+        display: flex;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        margin: .5em 1em 0 1em;
+      }
+
+      .legend {
+        color: grey;
+      }
+
+      .inputs {
+        display: flex;
+        flex-direction: column;
+        max-width: 480px;
+        flex-grow: 1;
+      }
+
+      .inputs textarea {
+        margin-top: .5em;
+        width: calc(100% - .5em);
+      }
+
+      .inputs button {
+        margin-top: .5em;
+        margin-left: auto;
+        height: 3em;
+      }
+
+      .inputs #warning {
+        margin-top: 1em;
+        margin-bottom: 1em;
+        padding: 1em;
+        background-color: #FFE0BA;
+      }
+
+      #results {
+        width: 100%;
+        max-width: 480px;
+      }
+    </style>
+  </body>
+</html>
