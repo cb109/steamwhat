@@ -209,7 +209,7 @@
 
         // Try to get steamIds from localStorage to begin with.
         var recentSteamIds = loadSteamIds();
-        if (recentSteamIds.length) {
+        if (recentSteamIds) {
           useInitialSteamIds(recentSteamIds);
         }
 
