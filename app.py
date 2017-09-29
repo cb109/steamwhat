@@ -180,7 +180,7 @@ def shared_games_report():
     if raw_steamids is None:
         return "ERROR: No steam ids specified", 400
     try:
-        steamids = [int(raw) for raw in raw_steamids.split(",")]
+        steamids = [str(raw).strip() for raw in raw_steamids.split(",")]
     except ValueError:
         return "ERROR: Steam ids are malformed", 400
     try:
