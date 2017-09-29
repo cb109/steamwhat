@@ -128,7 +128,12 @@
           for (var i = 0; i < data.shared_games.length; i++) {
             var game = data.shared_games[i];
             var li = document.createElement('li');
-            li.innerHTML = game.name;
+            var a = document.createElement('a');
+            var txt = document.createTextNode(game.name);
+            a.appendChild(txt);
+            a.href = 'http://store.steampowered.com/app/' + game.appid;
+            a.target = '_blank';
+            li.appendChild(a);
             ul.appendChild(li);
           }
           results.appendChild(h4);
