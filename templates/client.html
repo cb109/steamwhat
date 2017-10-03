@@ -34,10 +34,16 @@
             Add Players
           </button>
           <div id="players"></div>
-          <button id="find-btn"
-                  onclick="api.onFindSharedGamesClicked()">
-            Find shared Games
-          </button>
+          <div class="buttons">
+            <button id="clear-players-btn"
+                    onclick="api.onClearPlayersClicked()">
+              Clear Players
+            </button>
+            <button id="find-shared-games-btn"
+                    onclick="api.onFindSharedGamesClicked()">
+              Find shared Games
+            </button>
+          </div>
           <div id="warning" hidden>
             Something went wrong, please check your input and try again
           </div>
@@ -149,7 +155,7 @@
         }
 
         function getFindGamesButton() {
-          return document.querySelector('#find-btn');
+          return document.querySelector('#find-shared-games-btn');
         }
 
         function enableButtons(value) {
@@ -237,6 +243,15 @@
           results.appendChild(ul);
         }
 
+        function onClearPlayersClicked() {
+          var confirmed = confirm('Really delete all stored Players?');
+          if (!confirmed) {
+            return;
+          }
+          deleteStoredPlayers();
+          createPlayerCheckboxes([]);
+        }
+
         function onAddPlayersClicked() {
           var steamIds = getSteamIds();
           if (!steamIds.length) {
@@ -305,6 +320,7 @@
         }
 
         return {
+          onClearPlayersClicked: onClearPlayersClicked,
           onAddPlayersClicked: onAddPlayersClicked,
           onFindSharedGamesClicked: onFindSharedGamesClicked,
         };
@@ -350,6 +366,15 @@
         max-width: 480px;
       }
 
+      .buttons {
+        display: flex;
+      }
+
+      #clear-players-btn {
+        max-width: 90px;
+        margin-right: .5em;
+      }
+
       .inputs textarea {
         margin-top: .5em;
         width: calc(100% - .5em);
@@ -358,6 +383,7 @@
       button {
         margin-top: .5em;
         height: 2.5em;
+        flex-grow: 1;
       }
 
       .inputs #warning {
