@@ -267,18 +267,22 @@
 
           client.get(url, function(response) {
             // Add any new players to the list we remember across sessions.
-            var existingPlayers = loadPlayers();
             var newPlayers = JSON.parse(response);
+            var existingPlayers = loadPlayers();
             var combinedPlayers = existingPlayers.concat(newPlayers);
 
             var uniquePlayers = [];
             combinedPlayers.forEach(function(player) {
+              var alreadyAdded = false;
               uniquePlayers.forEach(function(uniquePlayer) {
                 if (player.steamid === uniquePlayer.steamid) {
+                  alreadyAdded = true;
                   return;
                 }
               });
-              uniquePlayers.push(player);
+              if (!alreadyAdded) {
+                uniquePlayers.push(player);
+              }
             });
 
             storePlayers(uniquePlayers);
