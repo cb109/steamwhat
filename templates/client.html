@@ -28,7 +28,7 @@
             </small>
             <p />
           </div>
-          <textarea id="steamids" rows="3"></textarea>
+          <textarea id="steamids" rows="4"></textarea>
           <div class="buttons">
             <button id="add-players-btn"
                     onclick="api.onAddPlayersClicked()">
@@ -296,6 +296,11 @@
 
         function onFindSharedGamesClicked() {
           var steamIds = getSelectedPlayerSteamIds();
+          console.log(steamIds);
+          if (!steamIds.length) {
+            alert('You must add and select at least one Player');
+            return;
+          }
           var steamIdsParam = steamIds.join(',');
           var query = '?steamids=' + encodeURI(steamIdsParam);
           var url = '/sharedgames' + query;
@@ -415,6 +420,7 @@
         margin-top: 2em;
       }
       #players > label {
+        margin-top: .25em;
         margin-right: .5em;
       }
 
