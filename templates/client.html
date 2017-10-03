@@ -29,10 +29,12 @@
             <p />
           </div>
           <textarea id="steamids" rows="3"></textarea>
-          <button id="add-players-btn"
-                  onclick="api.onAddPlayersClicked()">
-            Add Players
-          </button>
+          <div class="buttons">
+            <button id="add-players-btn"
+                    onclick="api.onAddPlayersClicked()">
+              Add Players
+            </button>
+          </div>
           <div id="players"></div>
           <div class="buttons">
             <button id="clear-players-btn"
@@ -129,11 +131,12 @@
             checkbox.type = 'checkbox';
             checkbox.checked = true;
             checkbox.id = player.steamid;
-            checkbox.className += ' player-checkbox';
+            checkbox.className += ' clickable player-checkbox';
 
             var label = document.createElement('label');
             label.htmlFor = player.steamid;
             label.title = player.steamid;
+            label.className += ' clickable';
             var txt = document.createTextNode(player.name);
             label.appendChild(txt);
             label.appendChild(checkbox);
@@ -351,6 +354,10 @@
         display: none;
       }
 
+      .clickable {
+        cursor: pointer;
+      }
+
       .container {
         display: flex;
         flex-direction: column;
@@ -372,11 +379,12 @@
 
       .buttons {
         display: flex;
+        justify-content: flex-end;
       }
 
       #clear-players-btn {
-        max-width: 90px;
         margin-right: .5em;
+        max-width: 90px;
       }
 
       .inputs textarea {
@@ -387,7 +395,11 @@
       button {
         margin-top: .5em;
         height: 2.5em;
-        flex-grow: 1;
+      }
+      @media (max-width: 599px) {
+        button {
+          flex-grow: 1;
+        }
       }
 
       .inputs #warning {
