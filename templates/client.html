@@ -31,10 +31,12 @@
             <p />
           </div>
           <textarea id="steamids" rows="5"></textarea>
-          <button id="find-btn"
-                  onclick="api.onFindSharedGamesClicked()">
-            Find shared Games
-          </button>
+          <div class="buttons">
+            <button id="find-btn"
+                    onclick="api.onFindSharedGamesClicked()">
+              Find shared Games
+            </button>
+          </div>
           <div id="warning" hidden>
             Something went wrong, please check your input and try again
           </div>
@@ -235,13 +237,17 @@
         text-decoration: none
       }
 
+      .hidden {
+        display: none;
+      }
+
       .container {
         display: flex;
         flex-direction: column;
         width: 100%;
         justify-content: center;
         align-items: center;
-        margin: .5em 1em 0 1em;
+        margin: 0 1em 0 1em;
       }
 
       .legend {
@@ -260,10 +266,15 @@
         width: calc(100% - .5em);
       }
 
-      .inputs button {
+      .buttons {
+        display: flex;
+        width: 100%;
         margin-top: .5em;
-        margin-left: auto;
-        height: 3em;
+        height: 2em;
+      }
+
+      #find-btn {
+        flex-grow: 5;
       }
 
       .inputs #warning {
