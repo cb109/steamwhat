@@ -18,10 +18,8 @@
           </h3>
           <div class="legend">
             You want to play a game on Steam with one or more of your
-            friends, but you don't know which?
-            <p />
-            Add Steam IDs (one per line) below and see which games you
-            all share.
+            friends, but you don't know which? Add Players via their Steam
+            IDs (one per line) below and see which games you all share.
             <p />
             <small>
               <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=209000244">
@@ -30,11 +28,24 @@
             </small>
             <p />
           </div>
-          <textarea id="steamids" rows="5"></textarea>
-          <button id="find-btn"
-                  onclick="api.onFindSharedGamesClicked()">
-            Find shared Games
-          </button>
+          <textarea id="steamids" rows="4"></textarea>
+          <div class="buttons">
+            <button id="add-players-btn"
+                    onclick="api.onAddPlayersClicked()">
+              Add Players
+            </button>
+          </div>
+          <div id="players"></div>
+          <div class="buttons">
+            <button id="clear-players-btn"
+                    onclick="api.onClearPlayersClicked()">
+              Clear Players
+            </button>
+            <button id="find-shared-games-btn"
+                    onclick="api.onFindSharedGamesClicked()">
+              Find shared Games
+            </button>
+          </div>
           <div id="warning" hidden>
             Something went wrong, please check your input and try again
           </div>
@@ -82,24 +93,56 @@
           return tokens;
         }
 
-        function loadSteamIds() {
-          var steamIds = localStorage.getItem('steamwhat__steamIds');
-          if (!steamIds) {
-            return null;
+        function deleteStoredPlayers() {
+          localStorage.removeItem('steamwhat__players');
+        }
+
+        function loadPlayers() {
+          var players = localStorage.getItem('steamwhat__players');
+          if (!players) {
+            return [];
           }
-          var steamIds = steamIds.split(',');
-          return steamIds;
+          try {
+            var players = JSON.parse(players);
+            return players;
+          }
+          catch(err) {
+            deleteStoredPlayers();
+            alert('Recent players data could not be loaded ' +
+                  'and has been deleted');
+            return [];
+          }
         }
 
-        function storeSteamIds(steamIds) {
-          var value = JSON.stringify(steamIds);
-          localStorage.setItem('steamwhat__steamIds', steamIds);
+        function storePlayers(players) {
+          var value = JSON.stringify(players);
+          localStorage.setItem('steamwhat__players', value);
         }
 
-        function useInitialSteamIds(steamIds) {
-          var area = getSteamIdsTextArea();
-          var text = steamIds.join('\n');
-          area.innerHTML = text;
+        function getPlayersContainer() {
+          return document.querySelector('#players');
+        }
+
+        function createPlayerCheckboxes(players) {
+          var container = getPlayersContainer();
+          container.innerHTML = '';
+          players.forEach(function(player) {
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            checkbox.id = player.steamid;
+            checkbox.className += ' clickable player-checkbox';
+
+            var label = document.createElement('label');
+            label.htmlFor = player.steamid;
+            label.title = player.steamid;
+            label.className += ' clickable';
+            var txt = document.createTextNode(player.name);
+            label.appendChild(txt);
+            label.appendChild(checkbox);
+
+            container.appendChild(label);
+          });
         }
 
         function showWarning() {
@@ -110,12 +153,17 @@
           }, 3000)
         }
 
-        function getButtonElement() {
-          return document.querySelector('#find-btn');
+        function getAddPlayersButton() {
+          return document.querySelector('#add-players-btn');
         }
 
-        function enableButton(value) {
-          getButtonElement().disabled = !value;
+        function getFindGamesButton() {
+          return document.querySelector('#find-shared-games-btn');
+        }
+
+        function enableButtons(value) {
+          getAddPlayersButton().disabled = !value;
+          getFindGamesButton().disabled = !value;
         }
 
         function getLoaderElement() {
@@ -126,17 +174,43 @@
           getLoaderElement().hidden = !value;
         }
 
+        function setBusy(value) {
+          if (value) {
+            enableButtons(false);
+            showLoader(true);
+          }
+          else {
+            enableButtons(true);
+            showLoader(false);
+          }
+        }
+
+        function getPlayerCheckboxes() {
+          return document.querySelectorAll('input.player-checkbox');
+        }
+
+        function getSelectedPlayerSteamIds() {
+          var steamIds = [];
+          var checkboxes = getPlayerCheckboxes();
+          checkboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+              steamIds.push(checkbox.id);
+            }
+          });
+          return steamIds;
+        }
+
         function getResultsElement() {
           var el = document.querySelector('#results');
           return el;
         }
 
-        function flushResults() {
+        function flushSharedGames() {
           var el = getResultsElement();
           el.innerHTML = '';
         }
 
-        function reportResults(response) {
+        function reportSharedGames(response) {
           var data = JSON.parse(response);
           var results = getResultsElement();
 
@@ -172,48 +246,94 @@
           results.appendChild(ul);
         }
 
-        function onFindSharedGamesClicked() {
+        function onClearPlayersClicked() {
+          var confirmed = confirm('Really delete all stored Players?');
+          if (!confirmed) {
+            return;
+          }
+          deleteStoredPlayers();
+          createPlayerCheckboxes([]);
+        }
+
+        function onAddPlayersClicked() {
           var steamIds = getSteamIds();
           if (!steamIds.length) {
             alert('You must enter at least one Steam ID');
             return;
           }
+          var steamIdsParam = steamIds.join(',');
+          var query = '?steamids=' + encodeURI(steamIdsParam);
+          var url = '/players' + query;
 
+          var client = new HttpClient();
+          setBusy(true);
+
+          client.get(url, function(response) {
+            // Add any new players to the list we remember across sessions.
+            var newPlayers = JSON.parse(response);
+            var existingPlayers = loadPlayers();
+            var combinedPlayers = existingPlayers.concat(newPlayers);
+
+            var uniquePlayers = [];
+            combinedPlayers.forEach(function(player) {
+              var alreadyAdded = false;
+              uniquePlayers.forEach(function(uniquePlayer) {
+                if (player.steamid === uniquePlayer.steamid) {
+                  alreadyAdded = true;
+                  return;
+                }
+              });
+              if (!alreadyAdded) {
+                uniquePlayers.push(player);
+              }
+            });
+
+            storePlayers(uniquePlayers);
+            createPlayerCheckboxes(uniquePlayers);
+            setBusy(false);
+          })
+        }
+
+        function onFindSharedGamesClicked() {
+          var steamIds = getSelectedPlayerSteamIds();
+          console.log(steamIds);
+          if (!steamIds.length) {
+            alert('You must add and select at least one Player');
+            return;
+          }
           var steamIdsParam = steamIds.join(',');
           var query = '?steamids=' + encodeURI(steamIdsParam);
           var url = '/sharedgames' + query;
 
           var client = new HttpClient();
-          flushResults();
-
-          enableButton(false);
-          showLoader(true);
+          // flushSharedGames();
+          setBusy(true);
 
           client.get(url,
             function(response) {
-              enableButton(true);
-              showLoader(false);
+              setBusy(false);
 
-              reportResults(response);
-              storeSteamIds(steamIds);
+              flushSharedGames();
+              reportSharedGames(response);
             },
             function(error) {
               console.error(error);
-              enableButton(true);
-              showLoader(false);
+              setBusy(false);
 
               showWarning();
-              flushResults();
+              flushSharedGames();
             });
         }
 
-        // Try to get steamIds from localStorage to begin with.
-        var recentSteamIds = loadSteamIds();
-        if (recentSteamIds) {
-          useInitialSteamIds(recentSteamIds);
+        // Try to get players from localStorage to begin with.
+        var rememberedPlayers = loadPlayers();
+        if (rememberedPlayers) {
+          createPlayerCheckboxes(rememberedPlayers);
         }
 
         return {
+          onClearPlayersClicked: onClearPlayersClicked,
+          onAddPlayersClicked: onAddPlayersClicked,
           onFindSharedGamesClicked: onFindSharedGamesClicked,
         };
       })();
@@ -235,13 +355,21 @@
         text-decoration: none
       }
 
+      .hidden {
+        display: none;
+      }
+
+      .clickable {
+        cursor: pointer;
+      }
+
       .container {
         display: flex;
         flex-direction: column;
         width: 100%;
         justify-content: center;
         align-items: center;
-        margin: .5em 1em 0 1em;
+        margin: 0 1em 0 1em;
       }
 
       .legend {
@@ -252,7 +380,16 @@
         display: flex;
         flex-direction: column;
         max-width: 480px;
-        flex-grow: 1;
+      }
+
+      .buttons {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      #clear-players-btn {
+        margin-right: .5em;
+        max-width: 90px;
       }
 
       .inputs textarea {
@@ -260,10 +397,14 @@
         width: calc(100% - .5em);
       }
 
-      .inputs button {
+      button {
         margin-top: .5em;
-        margin-left: auto;
-        height: 3em;
+        height: 2.5em;
+      }
+      @media (max-width: 599px) {
+        button {
+          flex-grow: 1;
+        }
       }
 
       .inputs #warning {
@@ -271,6 +412,16 @@
         margin-bottom: 1em;
         padding: 1em;
         background-color: #FFE0BA;
+      }
+
+      #players {
+        display: flex;
+        flex-flow: row wrap;
+        margin-top: 2em;
+      }
+      #players > label {
+        margin-top: .25em;
+        margin-right: .5em;
       }
 
       #results {
@@ -293,7 +444,7 @@
       .loader {
         color: #e0e0e0;
         font-size: 10px;
-        margin: 80px auto;
+        /*margin: 80px auto;*/
         position: relative;
         text-indent: -9999em;
         -webkit-transform: translateZ(0);

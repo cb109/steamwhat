@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-"""This app contains a single endpoint/URL to calculate shared Steam games."""
+"""This app contains endpoints to calculate shared Steam games."""
 
 import os
 
@@ -145,7 +145,61 @@ def get_shared_games_report(steamids):
     return jsonify(players=players, shared_games=shared_games)
 
 
+def parse_steamids_from_query():
+    raw_steamids = flask_request.args.get("steamids")
+    if raw_steamids is None:
+        raise ValueError("ERROR: No steam ids specified")
+    try:
+        steamids = [str(raw).strip() for raw in raw_steamids.split(",")]
+        steamids = list(set(steamids))
+    except ValueError:
+        raise ValueError("ERROR: Steam ids are malformed")
+    return steamids
+
+
 app = Flask(__name__)
+
+
+@app.route('/players')
+def players():
+    """Get a list of Steam IDs and return a list of players.
+
+    Each player has a steam ID and a name. If a steam ID fails being
+    looked up, ignore it and continue fetching other players.
+
+    Query Params:
+        steamids (str): Comma-separated list of steam ids, each
+            identifying a player.
+
+    Returns:
+        json
+
+    Example use:
+        /?steamids=12345,6789
+
+    Example result:
+        [
+            {"steamid": 12345, "name": "spamlord84"},
+            ...
+        ]
+    """
+    steamids = parse_steamids_from_query()
+    try:
+        g.player_summaries = get_player_summaries(steamids)
+        players = []
+        for steamid in steamids:
+            try:
+                player = get_player_by_steamid(steamid)
+                if player is not None:
+                    players.append({
+                        "name": player["personaname"],
+                        "steamid": player["steamid"],
+                    })
+            except Exception:
+                pass
+    except Exception as err:
+        return "ERROR: " + str(err), 500
+    return jsonify(players)
 
 
 @app.route('/sharedgames')
@@ -176,13 +230,7 @@ def shared_games_report():
             ],
         }
     """
-    raw_steamids = flask_request.args.get("steamids")
-    if raw_steamids is None:
-        return "ERROR: No steam ids specified", 400
-    try:
-        steamids = [int(raw) for raw in raw_steamids.split(",")]
-    except ValueError:
-        return "ERROR: Steam ids are malformed", 400
+    steamids = parse_steamids_from_query()
     try:
         result = get_shared_games_report(steamids)
     except Exception as err:
