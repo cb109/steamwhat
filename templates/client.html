@@ -11,29 +11,44 @@
     <div id="app">
       <div class="container">
         <div class="inputs">
-          <h3>
-            <a href="http://github.com/cb109/steamwhat">
-              Steam what?
-            </a>
-          </h3>
-          <div class="legend">
-            You want to play a game on Steam with one or more of your
-            friends, but you don't know which? Add Players via their Steam
-            IDs (one per line) below and see which games you all share.
-            <p />
-            <small>
-              <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=209000244">
-                But I don't know my Steam ID, where to find it?
+          <h3 style="display: flex">
+            steamwhat
+            <small style="margin-left: auto">
+              <a href="http://github.com/cb109/steamwhat">
+                @github
               </a>
             </small>
-            <p />
-          </div>
-          <textarea id="steamids" rows="4"></textarea>
-          <div class="buttons">
-            <button id="add-players-btn"
-                    onclick="api.onAddPlayersClicked()">
-              Add Players
-            </button>
+          </h3>
+          <div>
+            <a href="javascript:void(0)" onclick="api.onToggleLegendClicked()">
+              What is this all about?
+            </a>
+            <br />
+            <small class="legend" hidden>
+              You want to play a game on Steam with one or more of your
+              friends, but you don't know which?
+              Add Players via their steam64IDs (one per line) below and
+              see which games you all share.
+              The steam64ID is the one shown in your profile URL,
+              which you may have to activate under
+              <i>
+                Steam > Settings > Interface > Display Steam URL address bar when available
+              </i>.
+              You can also <a href="https://steamid.io/lookup/">convert</a>
+              from other ID formats.
+              <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=209000244">
+                I still can't find my Steam ID, please help!
+              </a>
+            </small>
+            <textarea id="steamids" rows="5"
+                      style="overflow: hidden"
+                      placeholder="Add steam64IDs here (one per line) e.g. 76561197960287930"></textarea>
+            <div class="buttons">
+              <button id="add-players-btn"
+                      onclick="api.onAddPlayersClicked()">
+                Add Players
+              </button>
+            </div>
           </div>
           <div id="players"></div>
           <div class="buttons">
@@ -174,6 +189,15 @@
           getLoaderElement().hidden = !value;
         }
 
+        function getLegendElement() {
+          return document.querySelector('.legend');
+        }
+
+        function onToggleLegendClicked() {
+          var el = getLegendElement();
+          el.hidden = !el.hidden;
+        }
+
         function setBusy(value) {
           if (value) {
             enableButtons(false);
@@ -291,12 +315,11 @@
             storePlayers(uniquePlayers);
             createPlayerCheckboxes(uniquePlayers);
             setBusy(false);
-          })
+          }, showWarning)
         }
 
         function onFindSharedGamesClicked() {
           var steamIds = getSelectedPlayerSteamIds();
-          console.log(steamIds);
           if (!steamIds.length) {
             alert('You must add and select at least one Player');
             return;
@@ -332,6 +355,7 @@
         }
 
         return {
+          onToggleLegendClicked: onToggleLegendClicked,
           onClearPlayersClicked: onClearPlayersClicked,
           onAddPlayersClicked: onAddPlayersClicked,
           onFindSharedGamesClicked: onFindSharedGamesClicked,
@@ -379,6 +403,7 @@
       .inputs {
         display: flex;
         flex-direction: column;
+        min-width: 320px;
         max-width: 480px;
       }
 
@@ -393,7 +418,7 @@
       }
 
       .inputs textarea {
-        margin-top: .5em;
+        margin-top: 1em;
         width: calc(100% - .5em);
       }
 

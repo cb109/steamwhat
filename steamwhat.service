@@ -1,0 +1,15 @@
+[Unit]
+Description=Steamwhat
+
+[Service]
+User=root
+Environment=FLASK_APP=app.py
+WorkingDirectory=/opt/steamwhat/
+ExecStart=/~/.virtualenvs/steamwhat/bin/flask run \
+          --with-threads \
+          --host=127.0.0.1 \
+          --port=5000
+
+[Install]
+WantedBy=multi-user.target
+Alias=steamwhat.service
