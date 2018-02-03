@@ -13,7 +13,7 @@ from flask import render_template
 from flask import request as flask_request
 
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 
 def get_steam_api_key():
