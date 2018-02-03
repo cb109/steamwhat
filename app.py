@@ -13,6 +13,9 @@ from flask import render_template
 from flask import request as flask_request
 
 
+__version__ = "1.3.0"
+
+
 def get_steam_api_key():
     """Get the API key either from OS keyring or from env variable.
 
