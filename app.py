@@ -16,6 +16,20 @@ from flask import request as flask_request
 __version__ = "1.4.0"
 
 
+_cache = {}
+
+def cached(func):
+    def wrapper(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        try:
+            result = _cache[key]
+        except KeyError:
+            result = func(*args, **kwargs)
+            _cache[key] = result
+        return result
+    return wrapper
+
+
 def get_steam_api_key():
     """Get the API key either from OS keyring or from env variable.
 
