@@ -1,3 +1,5 @@
+Finally, [Steam has added 'Filter by games of friends'](https://www.gamingonlinux.com/2022/09/steam-beta-lets-you-create-a-collection-filtered-by-games-you-and-friends-own/) to their Library interface, so this project is obsolete now!
+
 # steamwhat
 
 A small web application to find out which game you and your friends share on
